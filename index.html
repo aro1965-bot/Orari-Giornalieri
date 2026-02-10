@@ -1,5 +1,4 @@
- 
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -45,4 +44,44 @@ function save() {
 }
 
 function render() {
-  let
+  let data = JSON.parse(localStorage.getItem('orari') || '[]');
+  data.sort((a,b)=>a.d.localeCompare(b.d));
+  const list = document.getElementById('list');
+  list.innerHTML = data.map(x=>`<li>${x.d}: ${x.s} → ${x.e} (${x.ore} h)</li>`).join('');
+  document.getElementById('monthlyTotal').textContent = getMonthlyTotal(data);
+}
+
+function getHours(start,end){
+  const [sh,sm] = start.split(':').map(Number);
+  const [eh,em] = end.split(':').map(Number);
+  let diff = (eh+em/60) - (sh+sm/60);
+  if(diff<0) diff=0; // in caso di errore
+  return Math.round(diff*100)/100;
+}
+
+function getMonthlyTotal(data){
+  return data.reduce((sum,x)=>sum+x.ore,0);
+}
+
+// Esporta CSV
+function exportCSV(){
+  let data = JSON.parse(localStorage.getItem('orari') || '[]');
+  if(data.length===0){ alert('Nessun dato da esportare'); return; }
+  let csv = 'Giorno,Inizio,Fine,Ore\n';
+  data.forEach(x=>{ csv+=`${x.d},${x.s},${x.e},${x.ore}\n`; });
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'Orari.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Carica dati all'apertura
+render();
+</script>
+</body>
+</html>
+ 
+ 

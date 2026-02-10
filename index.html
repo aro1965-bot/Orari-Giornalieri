@@ -8,37 +8,47 @@
   body { 
     font-family: system-ui; 
     padding: 20px; 
-    background: #87CEEB; /* azzurro chiaro */
+    margin:0;
+    background: #001F3F; /* blu scuro */
     color: #FFD700; /* giallo */
   }
-  h2 { margin-bottom: 10px; }
+  h2 { margin-bottom: 10px; display:flex; align-items:center; font-size:24px; }
+  h2 span { margin-right: 8px; } /* spazio per logo */
   input, textarea, button { 
     font-size: 18px; 
     margin: 5px 0; 
-    padding:5px; 
+    padding:8px; 
     width: 100%; 
-    max-width: 300px; 
-    background: #ffffff; 
-    color: #000000; 
-    border-radius: 5px; 
+    max-width: 400px; 
+    border-radius: 8px; 
     border: 1px solid #ccc;
   }
   ul { padding-left: 20px; }
-  li { margin: 4px 0; }
-  .totali { margin-top:15px; font-weight:bold; }
+  li { margin: 4px 0; font-size:16px; }
+  .totali { margin-top:15px; font-weight:bold; font-size:16px; }
   button { 
     cursor:pointer; 
     background:#FFD700; /* giallo */
-    color:#000080; /* blu scuro testo */
+    color:#001F3F; /* blu scuro testo */
     border:none; 
-    border-radius:5px; 
+    border-radius:8px; 
+    margin-top:5px;
   }
   button:hover { background:#FFC700; }
-  label { display:block; margin-top:5px; }
+  label { display:block; margin-top:5px; font-size:16px; }
+  textarea { resize:none; }
+  /* Responsive per iPhone 15 */
+  @media screen and (max-width:430px){
+    input, textarea, button { font-size:16px; max-width:100%; }
+    h2 { font-size:20px; }
+    li { font-size:14px; }
+    .totali { font-size:14px; }
+  }
 </style>
 </head>
 <body>
-<h2>I miei orari di lavoro</h2>
+
+<h2><span>👮‍♂️</span>I miei orari di lavoro</h2>
 
 <label>Valore buono pasto (€): <input type="number" id="voucherValue" value="7.00" step="0.01"></label>
 

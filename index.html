@@ -5,18 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Orari Vigilanza Privata</title>
 <style>
-  body { font-family: system-ui; padding: 20px; background:#f5f5f5; }
+  body { 
+    font-family: system-ui; 
+    padding: 20px; 
+    background: #87CEEB; /* azzurro chiaro */
+    color: #FFD700; /* giallo */
+  }
   h2 { margin-bottom: 10px; }
-  input, textarea, button { font-size: 18px; margin: 5px 0; padding:5px; width: 100%; max-width: 300px; }
+  input, textarea, button { 
+    font-size: 18px; 
+    margin: 5px 0; 
+    padding:5px; 
+    width: 100%; 
+    max-width: 300px; 
+    background: #ffffff; 
+    color: #000000; 
+    border-radius: 5px; 
+    border: 1px solid #ccc;
+  }
   ul { padding-left: 20px; }
   li { margin: 4px 0; }
   .totali { margin-top:15px; font-weight:bold; }
-  button { cursor:pointer; background:#4CAF50; color:white; border:none; border-radius:5px; }
-  button:hover { background:#45a049; }
+  button { 
+    cursor:pointer; 
+    background:#FFD700; /* giallo */
+    color:#000080; /* blu scuro testo */
+    border:none; 
+    border-radius:5px; 
+  }
+  button:hover { background:#FFC700; }
+  label { display:block; margin-top:5px; }
 </style>
 </head>
 <body>
 <h2>I miei orari di lavoro</h2>
+
+<label>Valore buono pasto (€): <input type="number" id="voucherValue" value="7.00" step="0.01"></label>
 
 <input type="date" id="day" placeholder="Giorno"><br>
 <input type="time" id="start" placeholder="Inizio">
@@ -30,12 +54,13 @@
 
 <div class="totali">
   Ore totali ordinarie: <span id="ordinaryTotal">0</span><br>
-  Ore totali straordinario: <span id="extraTotal">0</span>
+  Ore totali straordinario: <span id="extraTotal">0</span><br>
+  Giorni presenti: <span id="daysPresent">0</span><br>
+  Totale buoni pasto (€): <span id="voucherTotal">0.00</span>
 </div>
 
 <script>
 const DAILY_STANDARD = 7 + 15/60; // 7h15min = 7.25h
-const WEEKLY_DAYS = 6; // 6 giorni lavoro
 
 function save() {
   const d = day.value, s = start.value, e = end.value, n = note.value.trim();
@@ -51,19 +76,23 @@ function render() {
   let data = JSON.parse(localStorage.getItem('orari') || '[]');
   data.sort((a,b)=>a.d.localeCompare(b.d));
   const list = document.getElementById('list');
+  const voucherValue = parseFloat(document.getElementById('voucherValue').value) || 0;
   list.innerHTML = data.map(x=>{
     let extra = Math.max(0,x.ore-DAILY_STANDARD).toFixed(2);
     return `<li>${x.d}: ${x.s} → ${x.e} (${x.ore}h, straordinario: ${extra}h) ${x.note?'- '+x.note:''}</li>`;
   }).join('');
+  
   document.getElementById('ordinaryTotal').textContent = getMonthlyOrdinary(data);
   document.getElementById('extraTotal').textContent = getMonthlyExtra(data);
+  document.getElementById('daysPresent').textContent = data.length;
+  document.getElementById('voucherTotal').textContent = (data.length * voucherValue).toFixed(2);
 }
 
 function getHours(start,end){
   const [sh,sm] = start.split(':').map(Number);
   const [eh,em] = end.split(':').map(Number);
   let diff = (eh+em/60) - (sh+sm/60);
-  if(diff<0) diff=0; // errore
+  if(diff<0) diff=0;
   return Math.round(diff*100)/100;
 }
 
@@ -83,14 +112,15 @@ function getMonthlyExtra(data){
   return Math.round(total*100)/100;
 }
 
-// Esporta CSV con ore straordinarie e note
+// Esporta CSV con buoni pasto
 function exportCSV(){
   let data = JSON.parse(localStorage.getItem('orari') || '[]');
   if(data.length===0){ alert('Nessun dato da esportare'); return; }
-  let csv = 'Giorno,Inizio,Fine,Ore,Ore Straordinario,Note\n';
+  const voucherValue = parseFloat(document.getElementById('voucherValue').value) || 0;
+  let csv = 'Giorno,Inizio,Fine,Ore,Ore Straordinario,Note,Buono Pasto (€)\n';
   data.forEach(x=>{
     let extra = Math.max(0,x.ore-DAILY_STANDARD).toFixed(2);
-    csv+=`${x.d},${x.s},${x.e},${x.ore},${extra},"${x.note}"\n`;
+    csv+=`${x.d},${x.s},${x.e},${x.ore},${extra},"${x.note}",${voucherValue}\n`;
   });
   const blob = new Blob([csv],{type:'text/csv'});
   const url = URL.createObjectURL(blob);
@@ -101,7 +131,6 @@ function exportCSV(){
   URL.revokeObjectURL(url);
 }
 
-// Carica dati all'apertura
 render();
 </script>
 </body>

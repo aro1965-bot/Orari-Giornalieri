@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>I miei orari</title>
+  <style>
+    body { font-family: system-ui; padding: 20px; }
+    input, button { font-size: 18px; margin: 5px 0; }
+    li { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <h2>I miei orari di lavoro</h2>
+
+  <input type="date" id="day"><br>
+  <input type="time" id="start">
+  <input type="time" id="end"><br>
+
+  <button onclick="save()">Salva</button>
+
+  <ul id="list"></ul>
+
+<script>
+function save() {
+  const d = day.value, s = start.value, e = end.value;
+  if (!d || !s || !e) return;
+  let data = JSON.parse(localStorage.getItem('orari') || '[]');
+  data.push({d,s,e});
+  localStorage.setItem('orari', JSON.stringify(data));
+  render();
+}
+function render() {
+  let data = JSON.parse(localStorage.getItem('orari') || '[]');
+  list.innerHTML = data.map(x =>
+    `<li>${x.d}: ${x.s} → ${x.e}</li>`
+  ).join('');
+}
+render();
+</script>
+</body>
+</html>

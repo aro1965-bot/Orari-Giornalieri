@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -55,5 +55,54 @@ function render() {
     let extra = Math.max(0,x.ore-DAILY_STANDARD).toFixed(2);
     return `<li>${x.d}: ${x.s} → ${x.e} (${x.ore}h, straordinario: ${extra}h) ${x.note?'- '+x.note:''}</li>`;
   }).join('');
-  document.getElementById('ordinar
+  document.getElementById('ordinaryTotal').textContent = getMonthlyOrdinary(data);
+  document.getElementById('extraTotal').textContent = getMonthlyExtra(data);
+}
 
+function getHours(start,end){
+  const [sh,sm] = start.split(':').map(Number);
+  const [eh,em] = end.split(':').map(Number);
+  let diff = (eh+em/60) - (sh+sm/60);
+  if(diff<0) diff=0; // errore
+  return Math.round(diff*100)/100;
+}
+
+function getMonthlyOrdinary(data){
+  let total = 0;
+  for(let i=0;i<data.length;i++){
+    total += Math.min(data[i].ore,DAILY_STANDARD);
+  }
+  return Math.round(total*100)/100;
+}
+
+function getMonthlyExtra(data){
+  let total = 0;
+  for(let i=0;i<data.length;i++){
+    total += Math.max(0,data[i].ore-DAILY_STANDARD);
+  }
+  return Math.round(total*100)/100;
+}
+
+// Esporta CSV con ore straordinarie e note
+function exportCSV(){
+  let data = JSON.parse(localStorage.getItem('orari') || '[]');
+  if(data.length===0){ alert('Nessun dato da esportare'); return; }
+  let csv = 'Giorno,Inizio,Fine,Ore,Ore Straordinario,Note\n';
+  data.forEach(x=>{
+    let extra = Math.max(0,x.ore-DAILY_STANDARD).toFixed(2);
+    csv+=`${x.d},${x.s},${x.e},${x.ore},${extra},"${x.note}"\n`;
+  });
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'Orari.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Carica dati all'apertura
+render();
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -382,42 +382,87 @@ function exportPDF() {
   }
   
   const voucherValue = parseFloat(document.getElementById('voucherValue').value) || 0;
-  let htmlContent = `<h1 style="text-align: center; color: #001F3F;">Orari Vigilanza Privata</h1>
-    <h2 style="text-align: center; color: #001F3F;">${formatMonth(currentMonth)}</h2>
-    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-      <thead><tr style="background-color: #001F3F; color: white;">
-        <th style="border: 1px solid #ddd; padding: 12px;">Giorno</th>
-        <th style="border: 1px solid #ddd; padding: 12px;">Inizio</th>
-        <th style="border: 1px solid #ddd; padding: 12px;">Fine</th>
-        <th style="border: 1px solid #ddd; padding: 12px;">Ore</th>
-        <th style="border: 1px solid #ddd; padding: 12px;">Extra</th>
-        <th style="border: 1px solid #ddd; padding: 12px;">Note</th>
-        <th style="border: 1px solid #ddd; padding: 12px;">Buono (€)</th>
-      </tr></thead><tbody>`;
   
-  monthlyData.forEach(x => {
+  // HTML per il PDF con colori LEGGIBILI (testo scuro su sfondo chiaro)
+  let htmlContent = `
+    <div style="font-family: Arial, sans-serif; color: #000000;">
+      <h1 style="text-align: center; color: #001F3F; border-bottom: 3px solid #001F3F; padding-bottom: 10px;">
+        👮‍♂️ Orari Vigilanza Privata
+      </h1>
+      <h2 style="text-align: center; color: #001F3F; margin-bottom: 20px;">
+        ${formatMonth(currentMonth)}
+      </h2>
+      
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+        <thead>
+          <tr style="background-color: #001F3F; color: white;">
+            <th style="border: 2px solid #001F3F; padding: 12px; text-align: left;">Giorno</th>
+            <th style="border: 2px solid #001F3F; padding: 12px; text-align: center;">Inizio</th>
+            <th style="border: 2px solid #001F3F; padding: 12px; text-align: center;">Fine</th>
+            <th style="border: 2px solid #001F3F; padding: 12px; text-align: center;">Ore</th>
+            <th style="border: 2px solid #001F3F; padding: 12px; text-align: center;">Extra</th>
+            <th style="border: 2px solid #001F3F; padding: 12px; text-align: left;">Note</th>
+            <th style="border: 2px solid #001F3F; padding: 12px; text-align: center;">Buono (€)</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  monthlyData.forEach((x, idx) => {
     let inizio = x.s || '-';
     let fine = x.e || '-';
     let ore = (x.ore > 0) ? x.ore : '-';
     let extra = (x.ore > 0) ? Math.max(0, x.ore - DAILY_STANDARD).toFixed(2) : '-';
     let buono = (x.s && x.e && x.ore > 0 && !isNoteExempt(x.note)) ? voucherValue : '-';
-    htmlContent += `<tr><td style="border: 1px solid #ddd; padding: 12px;">${formatDate(x.d)}</td><td style="border: 1px solid #ddd; padding: 12px;">${inizio}</td><td style="border: 1px solid #ddd; padding: 12px;">${fine}</td><td style="border: 1px solid #ddd; padding: 12px;">${ore}</td><td style="border: 1px solid #ddd; padding: 12px;">${extra}</td><td style="border: 1px solid #ddd; padding: 12px;">${x.note}</td><td style="border: 1px solid #ddd; padding: 12px;">${buono}</td></tr>`;
+    
+    const bgColor = idx % 2 === 0 ? '#FFFFFF' : '#F5F5F5';
+    
+    htmlContent += `
+      <tr style="background-color: ${bgColor}; color: #000000;">
+        <td style="border: 1px solid #ddd; padding: 12px; text-align: left;"><strong>${formatDate(x.d)}</strong></td>
+        <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">${inizio}</td>
+        <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">${fine}</td>
+        <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">${ore}</td>
+        <td style="border: 1px solid #ddd; padding: 12px; text-align: center;">${extra}</td>
+        <td style="border: 1px solid #ddd; padding: 12px; text-align: left;">${x.note}</td>
+        <td style="border: 1px solid #ddd; padding: 12px; text-align: center;"><strong>${buono}</strong></td>
+      </tr>
+    `;
   });
   
   const totalOrdinary = getMonthlyOrdinary(monthlyData).toFixed(2);
   const totalExtra = getMonthlyExtra(monthlyData).toFixed(2);
+  const totalDays = monthlyData.filter(x => x.d).length;
   const totalVouchers = monthlyData.filter(x => !isNoteExempt(x.note) && x.s && x.e && x.ore > 0).length * voucherValue;
   
-  htmlContent += `</tbody></table><div style="margin-top: 30px; padding: 20px; background-color: #f0f0f0; border-radius: 8px;">
-    <h3 style="color: #001F3F;">Riepilogo ${formatMonth(currentMonth)}</h3>
-    <p><strong>Ore ordinarie:</strong> ${totalOrdinary}h</p>
-    <p><strong>Ore straordinario:</strong> ${totalExtra}h</p>
-    <p><strong>Giorni presenti:</strong> ${monthlyData.length}</p>
-    <p><strong>Buoni pasto (€):</strong> ${totalVouchers.toFixed(2)}</p></div>`;
+  htmlContent += `
+        </tbody>
+      </table>
+      
+      <div style="background-color: #F0F0F0; border-left: 5px solid #001F3F; padding: 20px; margin-top: 20px; color: #000000;">
+        <h3 style="color: #001F3F; margin-top: 0;">📊 Riepilogo ${formatMonth(currentMonth)}</h3>
+        <p style="margin: 8px 0;"><strong>Ore totali ordinarie:</strong> <span style="color: #001F3F; font-weight: bold;">${totalOrdinary}h</span></p>
+        <p style="margin: 8px 0;"><strong>Ore totali straordinario:</strong> <span style="color: #FF6B35; font-weight: bold;">${totalExtra}h</span></p>
+        <p style="margin: 8px 0;"><strong>Giorni presenti:</strong> <span style="color: #001F3F; font-weight: bold;">${totalDays}</span></p>
+        <p style="margin: 8px 0;"><strong>Totale buoni pasto (€):</strong> <span style="color: #28A745; font-weight: bold;">€ ${totalVouchers.toFixed(2)}</span></p>
+      </div>
+      
+      <div style="margin-top: 30px; text-align: center; color: #666; font-size: 12px;">
+        <p>Documento generato il ${new Date().toLocaleDateString('it-IT')}</p>
+      </div>
+    </div>
+  `;
   
   const element = document.createElement('div');
   element.innerHTML = htmlContent;
-  html2pdf().set({margin: 10, filename: `Orari_${currentMonth}.pdf`, image: {type: 'jpeg', quality: 0.98}, html2canvas: {scale: 2}, jsPDF: {orientation: 'portrait', unit: 'mm', format: 'a4'}}).from(element).save();
+  
+  html2pdf().set({
+    margin: 10,
+    filename: `Orari_${currentMonth}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+  }).from(element).save();
 }
 
 initMonthSelector();

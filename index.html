@@ -1,147 +1,37 @@
- <!DOCTYPE html>
-<html lang="it">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Orari Vigilanza Privata</title>
-<style>
-  body { 
-    font-family: system-ui; 
-    padding: 20px; 
-    margin:0;
-    background: #001F3F; /* blu scuro */
-    color: #FFD700; /* giallo */
-  }
-  h2 { margin-bottom: 10px; display:flex; align-items:center; font-size:24px; }
-  h2 span { margin-right: 8px; } /* spazio per logo */
-  input, textarea, button { 
-    font-size: 18px; 
-    margin: 5px 0; 
-    padding:8px; 
-    width: 100%; 
-    max-width: 400px; 
-    border-radius: 8px; 
-    border: 1px solid #ccc;
-  }
-  ul { padding-left: 20px; }
-  li { margin: 4px 0; font-size:16px; }
-  .totali { margin-top:15px; font-weight:bold; font-size:16px; }
-  button { 
-    cursor:pointer; 
-    background:#FFD700; /* giallo */
-    color:#001F3F; /* blu scuro testo */
-    border:none; 
-    border-radius:8px; 
-    margin-top:5px;
-  }
-  button:hover { background:#FFC700; }
-  label { display:block; margin-top:5px; font-size:16px; }
-  textarea { resize:none; }
-  /* Responsive per iPhone 15 */
-  @media screen and (max-width:430px){
-    input, textarea, button { font-size:16px; max-width:100%; }
-    h2 { font-size:20px; }
-    li { font-size:14px; }
-    .totali { font-size:14px; }
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
 </head>
 <body>
+    <h1>Orari Giornalieri</h1>
+    <form>
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date">
+        <br>
+        <label for="field1">Field 1 (Optional):</label>
+        <input type="text" id="field1" name="field1">
+        <br>
+        <label for="field2">Field 2 (Optional):</label>
+        <input type="text" id="field2" name="field2">
+        <br>
+        <input type="submit" value="Submit">
+    </form>
 
-<h2><span>👮‍♂️</span>I miei orari di lavoro</h2>
+    <script>
+        // Function to handle PDF export instead of CSV
+        function exportPDF() {
+            // Your logic for exporting PDF goes here
+        }
 
-<label>Valore buono pasto (€): <input type="number" id="voucherValue" value="7.00" step="0.01"></label>
-
-<input type="date" id="day" placeholder="Giorno"><br>
-<input type="time" id="start" placeholder="Inizio">
-<input type="time" id="end" placeholder="Fine"><br>
-<textarea id="note" placeholder="Note (es. permesso, turno speciale)" rows="2"></textarea><br>
-
-<button onclick="save()">Salva turno</button>
-<button onclick="exportCSV()">Esporta CSV</button>
-
-<ul id="list"></ul>
-
-<div class="totali">
-  Ore totali ordinarie: <span id="ordinaryTotal">0</span><br>
-  Ore totali straordinario: <span id="extraTotal">0</span><br>
-  Giorni presenti: <span id="daysPresent">0</span><br>
-  Totale buoni pasto (€): <span id="voucherTotal">0.00</span>
-</div>
-
-<script>
-const DAILY_STANDARD = 7 + 15/60; // 7h15min = 7.25h
-
-function save() {
-  const d = day.value, s = start.value, e = end.value, n = note.value.trim();
-  if (!d || !s || !e) { alert('Compila tutti i campi'); return; }
-  const diff = getHours(s,e);
-  let data = JSON.parse(localStorage.getItem('orari') || '[]');
-  data.push({d,s,e,ore:diff,note:n});
-  localStorage.setItem('orari', JSON.stringify(data));
-  render();
-}
-
-function render() {
-  let data = JSON.parse(localStorage.getItem('orari') || '[]');
-  data.sort((a,b)=>a.d.localeCompare(b.d));
-  const list = document.getElementById('list');
-  const voucherValue = parseFloat(document.getElementById('voucherValue').value) || 0;
-  list.innerHTML = data.map(x=>{
-    let extra = Math.max(0,x.ore-DAILY_STANDARD).toFixed(2);
-    return `<li>${x.d}: ${x.s} → ${x.e} (${x.ore}h, straordinario: ${extra}h) ${x.note?'- '+x.note:''}</li>`;
-  }).join('');
-  
-  document.getElementById('ordinaryTotal').textContent = getMonthlyOrdinary(data);
-  document.getElementById('extraTotal').textContent = getMonthlyExtra(data);
-  document.getElementById('daysPresent').textContent = data.length;
-  document.getElementById('voucherTotal').textContent = (data.length * voucherValue).toFixed(2);
-}
-
-function getHours(start,end){
-  const [sh,sm] = start.split(':').map(Number);
-  const [eh,em] = end.split(':').map(Number);
-  let diff = (eh+em/60) - (sh+sm/60);
-  if(diff<0) diff=0;
-  return Math.round(diff*100)/100;
-}
-
-function getMonthlyOrdinary(data){
-  let total = 0;
-  for(let i=0;i<data.length;i++){
-    total += Math.min(data[i].ore,DAILY_STANDARD);
-  }
-  return Math.round(total*100)/100;
-}
-
-function getMonthlyExtra(data){
-  let total = 0;
-  for(let i=0;i<data.length;i++){
-    total += Math.max(0,data[i].ore-DAILY_STANDARD);
-  }
-  return Math.round(total*100)/100;
-}
-
-// Esporta CSV con buoni pasto
-function exportCSV(){
-  let data = JSON.parse(localStorage.getItem('orari') || '[]');
-  if(data.length===0){ alert('Nessun dato da esportare'); return; }
-  const voucherValue = parseFloat(document.getElementById('voucherValue').value) || 0;
-  let csv = 'Giorno,Inizio,Fine,Ore,Ore Straordinario,Note,Buono Pasto (€)\n';
-  data.forEach(x=>{
-    let extra = Math.max(0,x.ore-DAILY_STANDARD).toFixed(2);
-    csv+=`${x.d},${x.s},${x.e},${x.ore},${extra},"${x.note}",${voucherValue}\n`;
-  });
-  const blob = new Blob([csv],{type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'Orari.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-render();
-</script>
+        // Keywords handling
+        const keywords = ['ferie', 'riposo', 'permesso', 'malattia'];
+        // Example handling code for keywords
+        function handleKeywords(input) {
+            return keywords.includes(input.toLowerCase());
+        }
+    </script>
 </body>
 </html>

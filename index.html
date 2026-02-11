@@ -1,68 +1,428 @@
-<!DOCTYPE html>
-<html lang="en">
+ <!DOCTYPE html>
+<html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Improved Orari Giornalieri</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orari Vigilanza Privata</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  body { 
+    font-family: system-ui; 
+    padding: 20px; 
+    margin:0;
+    background: #001F3F;
+    color: #FFFFFF;
+  }
+  h2 { margin-bottom: 10px; display:flex; align-items:center; font-size:24px; color: #FFD700; }
+  h2 span { margin-right: 8px; }
+  .month-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+  .month-selector select {
+    font-size: 16px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid #FFD700;
+    background: #fff;
+    color: #001F3F;
+    cursor: pointer;
+  }
+  input, textarea, button { 
+    font-size: 18px; 
+    margin: 5px 0; 
+    padding:8px; 
+    width: 100%; 
+    max-width: 400px; 
+    border-radius: 8px; 
+    border: 2px solid #FFD700;
+    background: #fff;
+    color: #001F3F;
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: #FFC700;
+    box-shadow: 0 0 5px rgba(255, 199, 0, 0.5);
+  }
+  ul { padding-left: 20px; }
+  li { margin: 8px 0; font-size:16px; color: #FFD700; }
+  .totali { 
+    margin-top:20px; 
+    font-weight:bold; 
+    font-size:16px; 
+    color: #FFD700;
+    padding: 15px;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid #FFD700;
+  }
+  .totali > div { margin: 5px 0; }
+  .totali > span { color: #FFFFFF; font-weight: bold; }
+  button { 
+    cursor:pointer; 
+    background:#FFD700;
+    color:#001F3F;
+    border: none; 
+    border-radius:8px; 
+    margin-top:8px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+  }
+  button:hover { background:#FFC700; }
+  button:active { transform: scale(0.98); }
+  label { 
+    display:block; 
+    margin-top:10px; 
+    font-size:16px; 
+    color: #FFFFFF;
+    font-weight: 500;
+  }
+  textarea { 
+    resize:none; 
+    font-family: system-ui;
+  }
+  .error {
+    color: #FF6B6B;
+    font-size: 14px;
+    margin-top: 5px;
+    display: none;
+  }
+  .success {
+    color: #51CF66;
+    font-size: 14px;
+    margin-top: 5px;
+    text-align: center;
+    display: none;
+  }
+  .info-text {
+    font-size: 12px;
+    color: #AAA;
+    margin-top: 2px;
+  }
+  @media screen and (max-width:430px){
+    input, textarea, button { font-size:16px; max-width:100%; }
+    h2 { font-size:20px; }
+    li { font-size:14px; }
+    .totali { font-size:14px; }
+    .month-selector { flex-direction: column; gap: 5px; }
+    .month-selector select { width: 100%; }
+  }
+</style>
 </head>
 <body>
-    <header>
-        <h1>Orari Giornalieri</h1>
-        <p>Effettua il login per accedere alla dashboard.</p>
-    </header>
-    <main>
-        <form id="filterForm">
-            <label for="monthSelector">Seleziona Mese:</label>
-            <select id="monthSelector">
-                <!-- Options for months -->
-                <option value="01">Gennaio</option>
-                <option value="02">Febbraio</option>
-                <option value="03">Marzo</option>
-                <option value="04">Aprile</option>
-                <option value="05">Maggio</option>
-                <option value="06">Giugno</option>
-                <option value="07">Luglio</option>
-                <option value="08">Agosto</option>
-                <option value="09">Settembre</option>
-                <option value="10">Ottobre</option>
-                <option value="11">Novembre</option>
-                <option value="12">Dicembre</option>
-            </select>
-            <button type="button" onclick="filterByMonth()">Filtra</button>
-            <button type="button" onclick="exportPDF()">Esporta in PDF</button>
-        </form>
-        <section id="summary">
-            <h2>Riepilogo Mensile</h2>
-            <div id="summaryContent">
-                <!-- Summary Content Here -->
-            </div>
-        </section>
-        <section id="specialLeave">
-            <h2>Gestione Ferie e Permessi</h2>
-            <label for="leaveType">Tipo di Permesso:</label>
-            <select id="leaveType">
-                <option value="ferie">Ferie</option>
-                <option value="riposo">Riposo</option>
-                <option value="permesso">Permesso</option>
-                <option value="malattia">Malattia</option>
-            </select>
-            <button type="button" onclick="submitLeaveRequest()">Invia Richiesta</button>
-        </section>
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Ore di Lavoro</th>
-                    <th>Tipo di Permesso</th>
-                    <th>Note</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Dynamic Work Hours Input Here -->
-            </tbody>
-        </table>
-        <script src="script.js"></script>
-    </main>
+
+<h2><span>👮‍♂️</span>I miei orari di lavoro</h2>
+
+<div class="month-selector">
+  <label for="monthSelector" style="margin: 0;">Mese:</label>
+  <select id="monthSelector" onchange="changeMonth()"></select>
+</div>
+
+<label for="voucherValue">Valore buono pasto (€):</label>
+<input type="number" id="voucherValue" value="7.00" step="0.01" min="0">
+
+<label for="day">Data del turno:</label>
+<input type="date" id="day">
+<div class="info-text">Facoltativo</div>
+
+<label for="start">Ora di inizio:</label>
+<input type="time" id="start">
+<div class="info-text">Facoltativo</div>
+
+<label for="end">Ora di fine:</label>
+<input type="time" id="end">
+<div class="info-text">Facoltativo</div>
+
+<label for="note">Note:</label>
+<textarea id="note" placeholder="Esempi: ferie, riposo, permesso, malattia, turno speciale" rows="2"></textarea>
+<div class="info-text">Facoltativo</div>
+
+<div id="errorMsg" class="error"></div>
+<div id="successMsg" class="success"></div>
+
+<button onclick="save()">💾 Salva turno</button>
+<button onclick="exportPDF()">📄 Esporta PDF</button>
+<button onclick="clearAll()">🗑️ Cancella tutto</button>
+
+<ul id="list"></ul>
+
+<div class="totali">
+  <strong id="monthTitle" style="color: #FFD700;">Riepilogo Mese</strong>
+  <div>Ore totali ordinarie: <span id="ordinaryTotal">0</span></div>
+  <div>Ore totali straordinario: <span id="extraTotal">0</span></div>
+  <div>Giorni presenti: <span id="daysPresent">0</span></div>
+  <div>Totale buoni pasto (€): <span id="voucherTotal">0.00</span></div>
+</div>
+
+<script>
+const DAILY_STANDARD = 7 + 15/60;
+let currentMonth = null;
+const EXEMPT_KEYWORDS = ['ferie', 'riposo', 'permesso', 'malattia'];
+
+function getTodayString() {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+}
+
+function getYearMonth(dateStr) {
+  return dateStr.substring(0, 7);
+}
+
+function getCurrentMonth() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+}
+
+function initMonthSelector() {
+  let data = JSON.parse(localStorage.getItem('orari') || '[]');
+  const months = new Set();
+  data.forEach(entry => {
+    if (entry.d) months.add(getYearMonth(entry.d));
+  });
+  months.add(getCurrentMonth());
+  const sortedMonths = Array.from(months).sort().reverse();
+  const selector = document.getElementById('monthSelector');
+  selector.innerHTML = '';
+  sortedMonths.forEach(month => {
+    const option = document.createElement('option');
+    option.value = month;
+    option.textContent = formatMonth(month);
+    selector.appendChild(option);
+  });
+  if (sortedMonths.length > 0) {
+    selector.value = sortedMonths[0];
+    currentMonth = sortedMonths[0];
+  }
+}
+
+function formatMonth(monthStr) {
+  const [year, month] = monthStr.split('-');
+  const months = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+  return `${months[parseInt(month) - 1]} ${year}`;
+}
+
+function changeMonth() {
+  currentMonth = document.getElementById('monthSelector').value;
+  render();
+}
+
+function showError(msg) {
+  const errorDiv = document.getElementById('errorMsg');
+  errorDiv.textContent = msg;
+  errorDiv.style.display = 'block';
+  setTimeout(() => { errorDiv.style.display = 'none'; }, 4000);
+}
+
+function showSuccess(msg) {
+  const successDiv = document.getElementById('successMsg');
+  successDiv.textContent = msg;
+  successDiv.style.display = 'block';
+  setTimeout(() => { successDiv.style.display = 'none'; }, 3000);
+}
+
+function isNoteExempt(note) {
+  const lowerNote = note.toLowerCase().trim();
+  return EXEMPT_KEYWORDS.some(keyword => lowerNote.includes(keyword));
+}
+
+function save() {
+  const d = document.getElementById('day').value;
+  const s = document.getElementById('start').value;
+  const e = document.getElementById('end').value;
+  const n = document.getElementById('note').value.trim();
+  
+  if (!d && !s && !e && !n) { 
+    showError('❌ Devi inserire almeno un campo');
+    return; 
+  }
+  
+  if (d) {
+    const today = getTodayString();
+    if (d > today) {
+      showError('❌ Non puoi inserire una data nel futuro');
+      return;
+    }
+  }
+  
+  if (s && e) {
+    if (e <= s) {
+      showError('❌ L\'ora di fine deve essere successiva all\'inizio');
+      return;
+    }
+    const diff = getHours(s, e);
+    if (diff > 24) {
+      showError('❌ Le ore non possono superare 24');
+      return;
+    }
+  } else if ((s && !e) || (e && !s)) {
+    showError('❌ Inserisci sia inizio che fine oppure nessuno dei due');
+    return;
+  }
+  
+  let data = JSON.parse(localStorage.getItem('orari') || '[]');
+  const exists = data.some(x => x.d === d && x.s === s && x.e === e && x.note === n);
+  if (exists) {
+    showError('⚠️ Questo turno è già stato inserito');
+    return;
+  }
+  
+  const diff = (s && e) ? getHours(s, e) : 0;
+  data.push({d, s: s || '', e: e || '', ore: diff, note: n});
+  localStorage.setItem('orari', JSON.stringify(data));
+  
+  if (d) {
+    const newMonth = getYearMonth(d);
+    if (!currentMonth || newMonth !== currentMonth) {
+      initMonthSelector();
+      document.getElementById('monthSelector').value = newMonth;
+      currentMonth = newMonth;
+    }
+  }
+  
+  document.getElementById('day').value = '';
+  document.getElementById('start').value = '';
+  document.getElementById('end').value = '';
+  document.getElementById('note').value = '';
+  
+  showSuccess('✅ Turno salvato con successo!');
+  render();
+}
+
+function render() {
+  let data = JSON.parse(localStorage.getItem('orari') || '[]');
+  const monthlyData = data.filter(entry => !entry.d || getYearMonth(entry.d) === currentMonth).sort((a, b) => (a.d || '').localeCompare(b.d || ''));
+  
+  const list = document.getElementById('list');
+  if (monthlyData.length === 0) {
+    list.innerHTML = '<li style="color: #999;">Nessun turno registrato</li>';
+  } else {
+    list.innerHTML = monthlyData.map((x, idx) => {
+      const fullIdx = data.indexOf(x);
+      let displayText = '';
+      if (isNoteExempt(x.note)) {
+        displayText = `<strong>${x.d ? formatDate(x.d) : 'Senza data'}:</strong> 📝 ${x.note}`;
+      } else if (x.s && x.e && x.ore > 0) {
+        let extra = Math.max(0, x.ore - DAILY_STANDARD).toFixed(2);
+        displayText = `<strong>${x.d ? formatDate(x.d) : 'Senza data'}:</strong> ${x.s} → ${x.e} (${x.ore}h, extra: ${extra}h)${x.note ? ' 📝 ' + x.note : ''}`;
+      } else if (x.note) {
+        displayText = `<strong>${x.d ? formatDate(x.d) : 'Senza data'}:</strong> 📝 ${x.note}`;
+      } else {
+        displayText = `<strong>${x.d ? formatDate(x.d) : 'Senza data'}</strong>`;
+      }
+      return `<li>${displayText} <button onclick="deleteEntry(${fullIdx})" style="max-width: 30px; padding: 4px; margin-top: 3px;">🗑️</button></li>`;
+    }).join('');
+  }
+  
+  document.getElementById('monthTitle').textContent = `Riepilogo ${formatMonth(currentMonth)}`;
+  document.getElementById('ordinaryTotal').textContent = getMonthlyOrdinary(monthlyData).toFixed(2);
+  document.getElementById('extraTotal').textContent = getMonthlyExtra(monthlyData).toFixed(2);
+  document.getElementById('daysPresent').textContent = monthlyData.filter(x => x.d).length;
+  document.getElementById('voucherTotal').textContent = (monthlyData.filter(x => !isNoteExempt(x.note) && x.s && x.e && x.ore > 0).length * parseFloat(document.getElementById('voucherValue').value)).toFixed(2);
+}
+
+function formatDate(dateStr) {
+  const [year, month, day] = dateStr.split('-');
+  return `${day}/${month}/${year}`;
+}
+
+function getHours(start, end) {
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  let diff = (eh + em / 60) - (sh + sm / 60);
+  if (diff < 0) diff = 0;
+  return Math.round(diff * 100) / 100;
+}
+
+function getMonthlyOrdinary(data) {
+  let total = 0;
+  data.forEach(x => {
+    if (!isNoteExempt(x.note) && x.s && x.e && x.ore > 0) {
+      total += Math.min(x.ore, DAILY_STANDARD);
+    }
+  });
+  return Math.round(total * 100) / 100;
+}
+
+function getMonthlyExtra(data) {
+  let total = 0;
+  data.forEach(x => {
+    if (!isNoteExempt(x.note) && x.s && x.e && x.ore > 0) {
+      total += Math.max(0, x.ore - DAILY_STANDARD);
+    }
+  });
+  return Math.round(total * 100) / 100;
+}
+
+function deleteEntry(index) {
+  if (!confirm('Sei sicuro di voler eliminare questo turno?')) return;
+  let data = JSON.parse(localStorage.getItem('orari') || '[]');
+  data.splice(index, 1);
+  localStorage.setItem('orari', JSON.stringify(data));
+  render();
+}
+
+function clearAll() {
+  if (!confirm('Sei sicuro di voler eliminare TUTTI i turni?')) return;
+  localStorage.removeItem('orari');
+  initMonthSelector();
+  render();
+}
+
+function exportPDF() {
+  let data = JSON.parse(localStorage.getItem('orari') || '[]');
+  const monthlyData = data.filter(entry => entry.d && getYearMonth(entry.d) === currentMonth);
+  
+  if (monthlyData.length === 0) { 
+    showError('❌ Nessun dato da esportare');
+    return; 
+  }
+  
+  const voucherValue = parseFloat(document.getElementById('voucherValue').value) || 0;
+  let htmlContent = `<h1 style="text-align: center; color: #001F3F;">Orari Vigilanza Privata</h1>
+    <h2 style="text-align: center; color: #001F3F;">${formatMonth(currentMonth)}</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <thead><tr style="background-color: #001F3F; color: white;">
+        <th style="border: 1px solid #ddd; padding: 12px;">Giorno</th>
+        <th style="border: 1px solid #ddd; padding: 12px;">Inizio</th>
+        <th style="border: 1px solid #ddd; padding: 12px;">Fine</th>
+        <th style="border: 1px solid #ddd; padding: 12px;">Ore</th>
+        <th style="border: 1px solid #ddd; padding: 12px;">Extra</th>
+        <th style="border: 1px solid #ddd; padding: 12px;">Note</th>
+        <th style="border: 1px solid #ddd; padding: 12px;">Buono (€)</th>
+      </tr></thead><tbody>`;
+  
+  monthlyData.forEach(x => {
+    let inizio = x.s || '-';
+    let fine = x.e || '-';
+    let ore = (x.ore > 0) ? x.ore : '-';
+    let extra = (x.ore > 0) ? Math.max(0, x.ore - DAILY_STANDARD).toFixed(2) : '-';
+    let buono = (x.s && x.e && x.ore > 0 && !isNoteExempt(x.note)) ? voucherValue : '-';
+    htmlContent += `<tr><td style="border: 1px solid #ddd; padding: 12px;">${formatDate(x.d)}</td><td style="border: 1px solid #ddd; padding: 12px;">${inizio}</td><td style="border: 1px solid #ddd; padding: 12px;">${fine}</td><td style="border: 1px solid #ddd; padding: 12px;">${ore}</td><td style="border: 1px solid #ddd; padding: 12px;">${extra}</td><td style="border: 1px solid #ddd; padding: 12px;">${x.note}</td><td style="border: 1px solid #ddd; padding: 12px;">${buono}</td></tr>`;
+  });
+  
+  const totalOrdinary = getMonthlyOrdinary(monthlyData).toFixed(2);
+  const totalExtra = getMonthlyExtra(monthlyData).toFixed(2);
+  const totalVouchers = monthlyData.filter(x => !isNoteExempt(x.note) && x.s && x.e && x.ore > 0).length * voucherValue;
+  
+  htmlContent += `</tbody></table><div style="margin-top: 30px; padding: 20px; background-color: #f0f0f0; border-radius: 8px;">
+    <h3 style="color: #001F3F;">Riepilogo ${formatMonth(currentMonth)}</h3>
+    <p><strong>Ore ordinarie:</strong> ${totalOrdinary}h</p>
+    <p><strong>Ore straordinario:</strong> ${totalExtra}h</p>
+    <p><strong>Giorni presenti:</strong> ${monthlyData.length}</p>
+    <p><strong>Buoni pasto (€):</strong> ${totalVouchers.toFixed(2)}</p></div>`;
+  
+  const element = document.createElement('div');
+  element.innerHTML = htmlContent;
+  html2pdf().set({margin: 10, filename: `Orari_${currentMonth}.pdf`, image: {type: 'jpeg', quality: 0.98}, html2canvas: {scale: 2}, jsPDF: {orientation: 'portrait', unit: 'mm', format: 'a4'}}).from(element).save();
+}
+
+initMonthSelector();
+if (!currentMonth) currentMonth = getCurrentMonth();
+render();
+</script>
 </body>
 </html>

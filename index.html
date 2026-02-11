@@ -1,46 +1,68 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Orari Giornalieri</title>
-    <script>
-        function validateForm() {
-            // Add validation logic here  
-            return true;
-        }
-
-        function exportToPDF() {
-            // Logic for exporting data to PDF
-        }
-    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Improved Orari Giornalieri</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Orari Giornalieri</h1>
-    <form onsubmit="return validateForm()">
-        <label for="month">Select Month:</label>
-        <select id="month" name="month">
-            <option value="1">January</option>
-            <option value="2">February</option>
-            <option value="3">March</option>
-            <option value="4">April</option>
-            <option value="5">May</option>
-            <option value="6">June</option>
-            <option value="7">July</option>
-            <option value="8">August</option>
-            <option value="9">September</option>
-            <option value="10">October</option>
-            <option value="11">November</option>
-            <option value="12">December</option>
-        </select><br>
-        <label for="ferie">Ferie (Optional):</label>
-        <input type="text" id="ferie" name="ferie" placeholder="Leave days"><br>
-        <label for="riposo">Riposo (Optional):</label>
-        <input type="text" id="riposo" name="riposo" placeholder="Rest days"><br>
-        <label for="permesso">Permesso (Optional):</label>
-        <input type="text" id="permesso" name="permesso" placeholder="Permission days"><br>
-        <label for="malattia">Malattia (Optional):</label>
-        <input type="text" id="malattia" name="malattia" placeholder="Sick days"><br>
-
-        <input type="submit" value="Submit">
-    </form>
-    <button onclick="exportToPDF()">Export to PDF</button>
+    <header>
+        <h1>Orari Giornalieri</h1>
+        <p>Effettua il login per accedere alla dashboard.</p>
+    </header>
+    <main>
+        <form id="filterForm">
+            <label for="monthSelector">Seleziona Mese:</label>
+            <select id="monthSelector">
+                <!-- Options for months -->
+                <option value="01">Gennaio</option>
+                <option value="02">Febbraio</option>
+                <option value="03">Marzo</option>
+                <option value="04">Aprile</option>
+                <option value="05">Maggio</option>
+                <option value="06">Giugno</option>
+                <option value="07">Luglio</option>
+                <option value="08">Agosto</option>
+                <option value="09">Settembre</option>
+                <option value="10">Ottobre</option>
+                <option value="11">Novembre</option>
+                <option value="12">Dicembre</option>
+            </select>
+            <button type="button" onclick="filterByMonth()">Filtra</button>
+            <button type="button" onclick="exportPDF()">Esporta in PDF</button>
+        </form>
+        <section id="summary">
+            <h2>Riepilogo Mensile</h2>
+            <div id="summaryContent">
+                <!-- Summary Content Here -->
+            </div>
+        </section>
+        <section id="specialLeave">
+            <h2>Gestione Ferie e Permessi</h2>
+            <label for="leaveType">Tipo di Permesso:</label>
+            <select id="leaveType">
+                <option value="ferie">Ferie</option>
+                <option value="riposo">Riposo</option>
+                <option value="permesso">Permesso</option>
+                <option value="malattia">Malattia</option>
+            </select>
+            <button type="button" onclick="submitLeaveRequest()">Invia Richiesta</button>
+        </section>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Ore di Lavoro</th>
+                    <th>Tipo di Permesso</th>
+                    <th>Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamic Work Hours Input Here -->
+            </tbody>
+        </table>
+        <script src="script.js"></script>
+    </main>
 </body>
 </html>

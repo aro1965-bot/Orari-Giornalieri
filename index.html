@@ -138,7 +138,7 @@
 </head>
 <body>
 
-<h2><span>👮‍♂️</span>I miei orari di lavoro</h2>
+<h2><span>👮</span>I miei orari di lavoro</h2>
 
 <div class="month-selector">
   <label for="monthSelector" style="margin: 0;">Mese:</label>
@@ -498,7 +498,7 @@ function exportPDF() {
       
       <!-- Intestazione compatta -->
       <div style="text-align: center; margin-bottom: 6px; border-bottom: 2px solid #001F3F; padding-bottom: 4px;">
-        <h1 style="margin: 0; font-size: 14px; color: #001F3F;">👮‍♂️ ORARI VIGILANZA PRIVATA</h1>
+        <h1 style="margin: 0; font-size: 14px; color: #001F3F;">👮 ORARI VIGILANZA PRIVATA</h1>
         <div style="font-size: 9px; color: #666; margin-top: 2px;">Agente Matricola 2544</div>
         <div style="font-size: 10px; font-weight: bold; color: #001F3F; margin-top: 2px;">${formatMonth(currentMonth)}</div>
       </div>
@@ -545,7 +545,8 @@ function exportPDF() {
   const totalOrdinary = getMonthlyOrdinary(monthlyData).toFixed(2);
   const totalExtra = getMonthlyExtra(monthlyData).toFixed(2);
   const totalDays = monthlyData.filter(x => x.d && x.s && x.e && x.ore > 0 && !isNoteExempt(x.note)).length;
-  const totalVouchers = monthlyData.filter(x => x.d && !isNoteExempt(x.note) && x.s && x.e && x.ore > 0).length * voucherValue;
+  const voucherCount = monthlyData.filter(x => x.d && !isNoteExempt(x.note) && x.s && x.e && x.ore > 0).length;
+  const totalVouchers = (voucherCount * voucherValue).toFixed(2);
   
   htmlContent += `
         </tbody>
@@ -569,7 +570,7 @@ function exportPDF() {
           </tr>
           <tr>
             <td style="padding: 2px 0;"><strong>Totale buoni pasto:</strong></td>
-            <td style="text-align: right; color: #28A745; font-weight: bold; padding: 2px 0;">€ ${totalVouchers.toFixed(2)}</td>
+            <td style="text-align: right; color: #28A745; font-weight: bold; padding: 2px 0;">€ ${totalVouchers}</td>
           </tr>
         </table>
       </div>

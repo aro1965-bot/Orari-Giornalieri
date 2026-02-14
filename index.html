@@ -72,6 +72,21 @@
   }
   button:hover { background:#FFC700; }
   button:active { transform: scale(0.98); }
+  button.edit-btn {
+    max-width: 30px; 
+    padding: 4px; 
+    margin-top: 3px;
+    margin-right: 5px;
+    background: #4CAF50;
+  }
+  button.edit-btn:hover { background: #45a049; }
+  button.delete-btn {
+    max-width: 30px; 
+    padding: 4px; 
+    margin-top: 3px;
+    background: #f44336;
+  }
+  button.delete-btn:hover { background: #da190b; }
   label { 
     display:block; 
     margin-top:10px; 
@@ -101,6 +116,16 @@
     color: #AAA;
     margin-top: 2px;
   }
+  .editing-mode {
+    background: rgba(76, 175, 80, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    border: 2px solid #4CAF50;
+    margin-bottom: 10px;
+  }
+  .editing-mode label {
+    color: #4CAF50;
+  }
   @media screen and (max-width:430px){
     input, textarea, button { font-size:16px; max-width:100%; }
     h2 { font-size:20px; }
@@ -118,6 +143,11 @@
 <div class="month-selector">
   <label for="monthSelector" style="margin: 0;">Mese:</label>
   <select id="monthSelector" onchange="changeMonth()"></select>
+</div>
+
+<div id="editingNotice" class="editing-mode" style="display: none;">
+  <strong style="color: #4CAF50;">✏️ Modalità modifica attiva</strong>
+  <button onclick="cancelEdit()" style="max-width: 150px; margin-top: 5px;">❌ Annulla modifica</button>
 </div>
 
 <label for="voucherValue">Valore buono pasto (€):</label>
@@ -142,7 +172,7 @@
 <div id="errorMsg" class="error"></div>
 <div id="successMsg" class="success"></div>
 
-<button onclick="save()">💾 Salva turno</button>
+<button onclick="save()" id="saveBtn">💾 Salva turno</button>
 <button onclick="exportPDF()">📄 Esporta PDF</button>
 <button onclick="clearAll()">🗑️ Cancella tutto</button>
 
@@ -160,6 +190,7 @@
 const DAILY_STANDARD = 7 + 15/60;
 let currentMonth = null;
 const EXEMPT_KEYWORDS = ['ferie', 'riposo', 'permesso', 'malattia'];
+let editingIndex = null;
 
 function getTodayString() {
   const today = new Date();
@@ -207,6 +238,7 @@ function formatMonth(monthStr) {
 
 function changeMonth() {
   currentMonth = document.getElementById('monthSelector').value;
+  cancelEdit();
   render();
 }
 
@@ -227,6 +259,32 @@ function showSuccess(msg) {
 function isNoteExempt(note) {
   const lowerNote = note.toLowerCase().trim();
   return EXEMPT_KEYWORDS.some(keyword => lowerNote.includes(keyword));
+}
+
+function editEntry(index) {
+  let data = JSON.parse(localStorage.getItem('orari') || '[]');
+  const entry = data[index];
+  
+  document.getElementById('day').value = entry.d || '';
+  document.getElementById('start').value = entry.s || '';
+  document.getElementById('end').value = entry.e || '';
+  document.getElementById('note').value = entry.note || '';
+  
+  editingIndex = index;
+  document.getElementById('editingNotice').style.display = 'block';
+  document.getElementById('saveBtn').textContent = '✏️ Aggiorna turno';
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit() {
+  editingIndex = null;
+  document.getElementById('editingNotice').style.display = 'none';
+  document.getElementById('saveBtn').textContent = '💾 Salva turno';
+  document.getElementById('day').value = '';
+  document.getElementById('start').value = '';
+  document.getElementById('end').value = '';
+  document.getElementById('note').value = '';
 }
 
 function save() {
@@ -264,16 +322,29 @@ function save() {
   }
   
   let data = JSON.parse(localStorage.getItem('orari') || '[]');
-  const exists = data.some(x => x.d === d && x.s === s && x.e === e && x.note === n);
-  if (exists) {
-    showError('⚠️ Questo turno è già stato inserito');
-    return;
+  
+  // Controllo duplicati solo se non stiamo modificando
+  if (editingIndex === null) {
+    const exists = data.some(x => x.d === d && x.s === s && x.e === e && x.note === n);
+    if (exists) {
+      showError('⚠️ Questo turno è già stato inserito');
+      return;
+    }
   }
   
   const diff = (s && e) ? getHours(s, e) : 0;
   
   try {
-    data.push({d, s: s || '', e: e || '', ore: diff, note: n});
+    if (editingIndex !== null) {
+      // Modalità modifica
+      data[editingIndex] = {d, s: s || '', e: e || '', ore: diff, note: n};
+      showSuccess('✅ Turno aggiornato con successo!');
+      cancelEdit();
+    } else {
+      // Modalità inserimento
+      data.push({d, s: s || '', e: e || '', ore: diff, note: n});
+      showSuccess('✅ Turno salvato con successo!');
+    }
     localStorage.setItem('orari', JSON.stringify(data));
   } catch (e) {
     showError('❌ Impossibile salvare i dati. Spazio esaurito?');
@@ -289,18 +360,18 @@ function save() {
     }
   }
   
-  document.getElementById('day').value = '';
-  document.getElementById('start').value = '';
-  document.getElementById('end').value = '';
-  document.getElementById('note').value = '';
+  if (editingIndex === null) {
+    document.getElementById('day').value = '';
+    document.getElementById('start').value = '';
+    document.getElementById('end').value = '';
+    document.getElementById('note').value = '';
+  }
   
-  showSuccess('✅ Turno salvato con successo!');
   render();
 }
 
 function render() {
   let data = JSON.parse(localStorage.getItem('orari') || '[]');
-  // ✅ CORRETTO: Escludo turni senza data dal filtro mensile
   const monthlyData = data.filter(entry => entry.d && getYearMonth(entry.d) === currentMonth).sort((a, b) => (a.d || '').localeCompare(b.d || ''));
   
   const list = document.getElementById('list');
@@ -320,16 +391,14 @@ function render() {
       } else {
         displayText = `<strong>${x.d ? formatDate(x.d) : 'Senza data'}</strong>`;
       }
-      return `<li>${displayText} <button onclick="deleteEntry(${fullIdx})" style="max-width: 30px; padding: 4px; margin-top: 3px;">🗑️</button></li>`;
+      return `<li>${displayText} <button class="edit-btn" onclick="editEntry(${fullIdx})">✏️</button><button class="delete-btn" onclick="deleteEntry(${fullIdx})">🗑️</button></li>`;
     }).join('');
   }
   
   document.getElementById('monthTitle').textContent = `Riepilogo ${formatMonth(currentMonth)}`;
   document.getElementById('ordinaryTotal').textContent = getMonthlyOrdinary(monthlyData).toFixed(2);
   document.getElementById('extraTotal').textContent = getMonthlyExtra(monthlyData).toFixed(2);
-  // ✅ CORRETTO: Conta solo giorni con orari effettivi (non ferie/riposo/malattia)
   document.getElementById('daysPresent').textContent = monthlyData.filter(x => x.d && x.s && x.e && x.ore > 0 && !isNoteExempt(x.note)).length;
-  // ✅ CORRETTO: Calcolo corretto totale buoni pasto in euro
   const voucherCount = monthlyData.filter(x => x.d && !isNoteExempt(x.note) && x.s && x.e && x.ore > 0).length;
   const voucherValue = parseFloat(document.getElementById('voucherValue').value) || 0;
   document.getElementById('voucherTotal').textContent = (voucherCount * voucherValue).toFixed(2);
@@ -344,7 +413,6 @@ function getHours(start, end) {
   const [sh, sm] = start.split(':').map(Number);
   const [eh, em] = end.split(':').map(Number);
   let diff = (eh + em / 60) - (sh + sm / 60);
-  // ✅ CORRETTO: Gestione turni notturni a cavallo della mezzanotte
   if (diff < 0) diff += 24;
   return Math.round(diff * 100) / 100;
 }
@@ -379,8 +447,8 @@ function deleteEntry(index) {
     showError('❌ Impossibile salvare le modifiche');
     return;
   }
-  // ✅ CORRETTO: Aggiorno il selettore mesi dopo cancellazione
   initMonthSelector();
+  cancelEdit();
   render();
 }
 
@@ -388,73 +456,94 @@ function clearAll() {
   if (!confirm('Sei sicuro di voler eliminare TUTTI i turni?')) return;
   localStorage.removeItem('orari');
   initMonthSelector();
+  cancelEdit();
   render();
+}
+
+function getDaysInMonth(yearMonth) {
+  const [year, month] = yearMonth.split('-').map(Number);
+  return new Date(year, month, 0).getDate();
+}
+
+function getAllDaysInMonth(yearMonth) {
+  const daysInMonth = getDaysInMonth(yearMonth);
+  const days = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayStr = String(day).padStart(2, '0');
+    days.push(`${yearMonth}-${dayStr}`);
+  }
+  return days;
 }
 
 function exportPDF() {
   let data = JSON.parse(localStorage.getItem('orari') || '[]');
-  const monthlyData = data.filter(entry => entry.d && getYearMonth(entry.d) === currentMonth).sort((a, b) => a.d.localeCompare(b.d));
-  
-  if (monthlyData.length === 0) { 
-    showError('❌ Nessun dato da esportare');
-    return; 
-  }
-  
+  const allDays = getAllDaysInMonth(currentMonth);
   const voucherValue = parseFloat(document.getElementById('voucherValue').value) || 0;
   
-  // ✅ PDF OTTIMIZZATO PER UNA SOLA PAGINA A4
+  // Creo un map dei dati esistenti
+  const dataMap = {};
+  data.forEach(entry => {
+    if (entry.d && getYearMonth(entry.d) === currentMonth) {
+      dataMap[entry.d] = entry;
+    }
+  });
+  
+  // Creo array completo con tutti i giorni
+  const completeMonthData = allDays.map(day => {
+    return dataMap[day] || { d: day, s: '', e: '', ore: 0, note: '' };
+  });
+  
   let htmlContent = `
-    <div style="font-family: Arial, sans-serif; color: #000; font-size: 9px; padding: 10px;">
+    <div style="font-family: Arial, sans-serif; color: #000; font-size: 7px; padding: 8px;">
       
       <!-- Intestazione compatta -->
-      <div style="text-align: center; margin-bottom: 8px; border-bottom: 2px solid #001F3F; padding-bottom: 5px;">
-        <h1 style="margin: 0; font-size: 16px; color: #001F3F;">👮‍♂️ ORARI VIGILANZA PRIVATA</h1>
-        <div style="font-size: 11px; color: #666; margin-top: 3px;">Agente Matricola 2544</div>
-        <div style="font-size: 12px; font-weight: bold; color: #001F3F; margin-top: 2px;">${formatMonth(currentMonth)}</div>
+      <div style="text-align: center; margin-bottom: 6px; border-bottom: 2px solid #001F3F; padding-bottom: 4px;">
+        <h1 style="margin: 0; font-size: 14px; color: #001F3F;">👮‍♂️ ORARI VIGILANZA PRIVATA</h1>
+        <div style="font-size: 9px; color: #666; margin-top: 2px;">Agente Matricola 2544</div>
+        <div style="font-size: 10px; font-weight: bold; color: #001F3F; margin-top: 2px;">${formatMonth(currentMonth)}</div>
       </div>
       
-      <!-- Tabella compatta -->
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 8px;">
+      <!-- Tabella con tutti i giorni -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 7px;">
         <thead>
           <tr style="background-color: #001F3F; color: white;">
-            <th style="border: 1px solid #001F3F; padding: 4px; text-align: left; width: 12%;">Giorno</th>
-            <th style="border: 1px solid #001F3F; padding: 4px; text-align: center; width: 10%;">Inizio</th>
-            <th style="border: 1px solid #001F3F; padding: 4px; text-align: center; width: 10%;">Fine</th>
-            <th style="border: 1px solid #001F3F; padding: 4px; text-align: center; width: 8%;">Ore</th>
-            <th style="border: 1px solid #001F3F; padding: 4px; text-align: center; width: 8%;">Extra</th>
-            <th style="border: 1px solid #001F3F; padding: 4px; text-align: left; width: 42%;">Note</th>
-            <th style="border: 1px solid #001F3F; padding: 4px; text-align: center; width: 10%;">Buono (€)</th>
+            <th style="border: 1px solid #001F3F; padding: 3px; text-align: left; width: 10%;">Giorno</th>
+            <th style="border: 1px solid #001F3F; padding: 3px; text-align: center; width: 8%;">Inizio</th>
+            <th style="border: 1px solid #001F3F; padding: 3px; text-align: center; width: 8%;">Fine</th>
+            <th style="border: 1px solid #001F3F; padding: 3px; text-align: center; width: 7%;">Ore</th>
+            <th style="border: 1px solid #001F3F; padding: 3px; text-align: center; width: 7%;">Extra</th>
+            <th style="border: 1px solid #001F3F; padding: 3px; text-align: left; width: 50%;">Note</th>
+            <th style="border: 1px solid #001F3F; padding: 3px; text-align: center; width: 10%;">Buono (€)</th>
           </tr>
         </thead>
         <tbody>
   `;
   
-  monthlyData.forEach((x, idx) => {
+  completeMonthData.forEach((x, idx) => {
     let inizio = x.s || '-';
     let fine = x.e || '-';
     let ore = (x.ore > 0) ? x.ore.toFixed(2) : '-';
     let extra = (x.ore > 0) ? Math.max(0, x.ore - DAILY_STANDARD).toFixed(2) : '-';
-    // ✅ CORRETTO: Formattazione buono pasto con .toFixed(2)
-    let buono = (x.d && x.s && x.e && x.ore > 0 && !isNoteExempt(x.note)) ? voucherValue.toFixed(2) : '-';
+    let buono = (x.s && x.e && x.ore > 0 && !isNoteExempt(x.note)) ? voucherValue.toFixed(2) : '-';
     
     const bgColor = idx % 2 === 0 ? '#FFFFFF' : '#F9F9F9';
     
     htmlContent += `
       <tr style="background-color: ${bgColor};">
-        <td style="border: 1px solid #ddd; padding: 4px; text-align: left;"><strong>${formatDate(x.d)}</strong></td>
-        <td style="border: 1px solid #ddd; padding: 4px; text-align: center;">${inizio}</td>
-        <td style="border: 1px solid #ddd; padding: 4px; text-align: center;">${fine}</td>
-        <td style="border: 1px solid #ddd; padding: 4px; text-align: center;">${ore}</td>
-        <td style="border: 1px solid #ddd; padding: 4px; text-align: center;">${extra}</td>
-        <td style="border: 1px solid #ddd; padding: 4px; text-align: left; font-size: 7px;">${x.note || ''}</td>
-        <td style="border: 1px solid #ddd; padding: 4px; text-align: center;"><strong>${buono}</strong></td>
+        <td style="border: 1px solid #ddd; padding: 3px; text-align: left;"><strong>${formatDate(x.d)}</strong></td>
+        <td style="border: 1px solid #ddd; padding: 3px; text-align: center;">${inizio}</td>
+        <td style="border: 1px solid #ddd; padding: 3px; text-align: center;">${fine}</td>
+        <td style="border: 1px solid #ddd; padding: 3px; text-align: center;">${ore}</td>
+        <td style="border: 1px solid #ddd; padding: 3px; text-align: center;">${extra}</td>
+        <td style="border: 1px solid #ddd; padding: 3px; text-align: left; font-size: 6px;">${x.note || ''}</td>
+        <td style="border: 1px solid #ddd; padding: 3px; text-align: center;"><strong>${buono}</strong></td>
       </tr>
     `;
   });
   
+  const monthlyData = completeMonthData.filter(x => x.s && x.e && x.ore > 0);
   const totalOrdinary = getMonthlyOrdinary(monthlyData).toFixed(2);
   const totalExtra = getMonthlyExtra(monthlyData).toFixed(2);
-  // ✅ CORRETTO: Conta solo giorni effettivamente lavorati
   const totalDays = monthlyData.filter(x => x.d && x.s && x.e && x.ore > 0 && !isNoteExempt(x.note)).length;
   const totalVouchers = monthlyData.filter(x => x.d && !isNoteExempt(x.note) && x.s && x.e && x.ore > 0).length * voucherValue;
   
@@ -462,33 +551,35 @@ function exportPDF() {
         </tbody>
       </table>
       
-      <!-- Riquadro riepilogo in basso -->
-      <div style="background-color: #F0F0F0; border: 2px solid #001F3F; padding: 8px; margin-top: 10px; font-size: 9px;">
-        <div style="text-align: center; font-weight: bold; color: #001F3F; margin-bottom: 6px; font-size: 11px;">📊 RIEPILOGO ${formatMonth(currentMonth).toUpperCase()}</div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-          <span><strong>Ore totali ordinarie:</strong></span>
-          <span style="color: #001F3F; font-weight: bold;">${totalOrdinary}h</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-          <span><strong>Ore totali straordinario:</strong></span>
-          <span style="color: #FF6B35; font-weight: bold;">${totalExtra}h</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-          <span><strong>Giorni presenti:</strong></span>
-          <span style="color: #001F3F; font-weight: bold;">${totalDays}</span>
-        </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span><strong>Totale buoni pasto:</strong></span>
-          <span style="color: #28A745; font-weight: bold;">€ ${totalVouchers.toFixed(2)}</span>
-        </div>
+      <!-- Riquadro riepilogo ottimizzato -->
+      <div style="background-color: #F5F5F5; border: 2px solid #001F3F; padding: 6px; font-size: 8px; page-break-inside: avoid;">
+        <div style="text-align: center; font-weight: bold; color: #001F3F; margin-bottom: 4px; font-size: 10px;">📊 RIEPILOGO ${formatMonth(currentMonth).toUpperCase()}</div>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 2px 0;"><strong>Ore totali ordinarie:</strong></td>
+            <td style="text-align: right; color: #001F3F; font-weight: bold; padding: 2px 0;">${totalOrdinary}h</td>
+          </tr>
+          <tr>
+            <td style="padding: 2px 0;"><strong>Ore totali straordinario:</strong></td>
+            <td style="text-align: right; color: #FF6B35; font-weight: bold; padding: 2px 0;">${totalExtra}h</td>
+          </tr>
+          <tr>
+            <td style="padding: 2px 0;"><strong>Giorni presenti:</strong></td>
+            <td style="text-align: right; color: #001F3F; font-weight: bold; padding: 2px 0;">${totalDays}</td>
+          </tr>
+          <tr>
+            <td style="padding: 2px 0;"><strong>Totale buoni pasto:</strong></td>
+            <td style="text-align: right; color: #28A745; font-weight: bold; padding: 2px 0;">€ ${totalVouchers.toFixed(2)}</td>
+          </tr>
+        </table>
       </div>
       
-      <!-- Firma in basso -->
-      <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 8px; color: #666;">
+      <!-- Footer con autore -->
+      <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 7px; color: #666; page-break-inside: avoid;">
         <div>Documento generato il ${new Date().toLocaleDateString('it-IT')}</div>
         <div style="text-align: right;">
-          <div>Firma: <strong>Aro1965</strong></div>
-          <div style="font-size: 7px; color: #999;">ver.1</div>
+          <div><strong>Autore: Aro1965</strong></div>
+          <div style="font-size: 6px; color: #999;">ver.2.0</div>
         </div>
       </div>
     </div>
@@ -498,10 +589,10 @@ function exportPDF() {
   element.innerHTML = htmlContent;
   
   html2pdf().set({
-    margin: [8, 8, 8, 8],
+    margin: [6, 6, 6, 6],
     filename: `Orari_Matricola2544_${currentMonth}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, letterRendering: true },
+    image: { type: 'jpeg', quality: 0.95 },
+    html2canvas: { scale: 2, letterRendering: true, useCORS: true },
     jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4', compressPDF: true }
   }).from(element).save();
   

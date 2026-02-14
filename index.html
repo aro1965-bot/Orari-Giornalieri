@@ -327,9 +327,12 @@ function render() {
   document.getElementById('monthTitle').textContent = `Riepilogo ${formatMonth(currentMonth)}`;
   document.getElementById('ordinaryTotal').textContent = getMonthlyOrdinary(monthlyData).toFixed(2);
   document.getElementById('extraTotal').textContent = getMonthlyExtra(monthlyData).toFixed(2);
-  document.getElementById('daysPresent').textContent = monthlyData.filter(x => x.d).length;
-  // ✅ CORRETTO: Aggiungo controllo x.d per buoni pasto
-  document.getElementById('voucherTotal').textContent = (monthlyData.filter(x => x.d && !isNoteExempt(x.note) && x.s && x.e && x.ore > 0).length * parseFloat(document.getElementById('voucherValue').value)).toFixed(2);
+  // ✅ CORRETTO: Conta solo giorni con orari effettivi (non ferie/riposo/malattia)
+  document.getElementById('daysPresent').textContent = monthlyData.filter(x => x.d && x.s && x.e && x.ore > 0 && !isNoteExempt(x.note)).length;
+  // ✅ CORRETTO: Calcolo corretto totale buoni pasto in euro
+  const voucherCount = monthlyData.filter(x => x.d && !isNoteExempt(x.note) && x.s && x.e && x.ore > 0).length;
+  const voucherValue = parseFloat(document.getElementById('voucherValue').value) || 0;
+  document.getElementById('voucherTotal').textContent = (voucherCount * voucherValue).toFixed(2);
 }
 
 function formatDate(dateStr) {
@@ -451,7 +454,8 @@ function exportPDF() {
   
   const totalOrdinary = getMonthlyOrdinary(monthlyData).toFixed(2);
   const totalExtra = getMonthlyExtra(monthlyData).toFixed(2);
-  const totalDays = monthlyData.filter(x => x.d).length;
+  // ✅ CORRETTO: Conta solo giorni effettivamente lavorati
+  const totalDays = monthlyData.filter(x => x.d && x.s && x.e && x.ore > 0 && !isNoteExempt(x.note)).length;
   const totalVouchers = monthlyData.filter(x => x.d && !isNoteExempt(x.note) && x.s && x.e && x.ore > 0).length * voucherValue;
   
   htmlContent += `

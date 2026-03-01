@@ -212,7 +212,7 @@
 </div>
 
 <label for="voucherValue">Valore buono pasto (€):</label>
-<input type="number" id="voucherValue" value="7.00" step="0.01" min="0">
+<input type="number" id="voucherValue" value="6.00" step="0.01" min="0">
 
 <label for="day">Data del turno:</label>
 <input type="date" id="day">
@@ -261,6 +261,8 @@ const DAILY_STANDARD = 7 + 15/60;
 let currentMonth = null;
 const EXEMPT_KEYWORDS = ['ferie', 'riposo', 'permesso', 'malattia'];
 let editingIndex = null;
+
+const GIORNI_SETTIMANA = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
 
 function getTodayString() {
   const today = new Date();
@@ -337,6 +339,12 @@ function sanitize(str) {
   return div.innerHTML;
 }
 
+function getWeekdayAbbr(dateStr) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return GIORNI_SETTIMANA[date.getDay()];
+}
+
 function editEntry(index) {
   let data = JSON.parse(localStorage.getItem('orari') || '[]');
   const entry = data[index];
@@ -399,9 +407,8 @@ function save() {
   
   let data = JSON.parse(localStorage.getItem('orari') || '[]');
   
-  // Controllo duplicati sempre attivo — in modifica esclude se stesso
   const exists = data.some((x, idx) => {
-    if (editingIndex !== null && idx === editingIndex) return false; // salta l'elemento corrente
+    if (editingIndex !== null && idx === editingIndex) return false;
     return x.d === d && x.s === s && x.e === e && x.note === n;
   });
   if (exists) {
@@ -457,16 +464,18 @@ function render() {
     list.innerHTML = monthlyData.map((x) => {
       const fullIdx = data.indexOf(x);
       const safeNote = sanitize(x.note || '');
+      const weekday = x.d ? getWeekdayAbbr(x.d) : '';
+      const dateLabel = x.d ? `${formatDate(x.d)} <span style="color:#FFC700;font-size:13px;font-weight:normal;">(${weekday})</span>` : 'Senza data';
       let displayText = '';
       if (isNoteExempt(x.note)) {
-        displayText = `<strong>${x.d ? formatDate(x.d) : 'Senza data'}:</strong> 📝 ${safeNote}`;
+        displayText = `<strong>${dateLabel}:</strong> 📝 ${safeNote}`;
       } else if (x.s && x.e && x.ore > 0) {
         let extra = Math.max(0, x.ore - DAILY_STANDARD).toFixed(2);
-        displayText = `<strong>${x.d ? formatDate(x.d) : 'Senza data'}:</strong> ${x.s} → ${x.e} (${x.ore.toFixed(2)}h, extra: ${extra}h)${safeNote ? ' 📝 ' + safeNote : ''}`;
+        displayText = `<strong>${dateLabel}:</strong> ${x.s} → ${x.e} (${x.ore.toFixed(2)}h, extra: ${extra}h)${safeNote ? ' 📝 ' + safeNote : ''}`;
       } else if (safeNote) {
-        displayText = `<strong>${x.d ? formatDate(x.d) : 'Senza data'}:</strong> 📝 ${safeNote}`;
+        displayText = `<strong>${dateLabel}:</strong> 📝 ${safeNote}`;
       } else {
-        displayText = `<strong>${x.d ? formatDate(x.d) : 'Senza data'}</strong>`;
+        displayText = `<strong>${dateLabel}</strong>`;
       }
       return `<li>${displayText} <button class="edit-btn" onclick="editEntry(${fullIdx})">✏️</button><button class="delete-btn" onclick="deleteEntry(${fullIdx})">🗑️</button></li>`;
     }).join('');
@@ -564,7 +573,6 @@ function importJSON(event) {
         showError('❌ File non valido: il JSON deve contenere un array di turni');
         return;
       }
-      // Validazione campi minimi
       const valid = imported.every(item => typeof item === 'object' && item !== null);
       if (!valid) {
         showError('❌ File corrotto o formato non riconosciuto');
@@ -578,7 +586,6 @@ function importJSON(event) {
 
       let merged;
       if (mode) {
-        // Unione con deduplicazione
         merged = [...existing];
         let added = 0;
         imported.forEach(imp => {
@@ -599,8 +606,6 @@ function importJSON(event) {
     }
   };
   reader.readAsText(file);
-
-  // Reset input per permettere di reimportare lo stesso file
   event.target.value = '';
 }
 
@@ -646,12 +651,12 @@ function exportPDF() {
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 7px;">
         <thead>
           <tr style="background-color: #001F3F; color: white;">
-            <th style="border: 1px solid #001F3F; padding: 3px; text-align: left; width: 10%;">Giorno</th>
+            <th style="border: 1px solid #001F3F; padding: 3px; text-align: left; width: 12%;">Giorno</th>
             <th style="border: 1px solid #001F3F; padding: 3px; text-align: center; width: 8%;">Inizio</th>
             <th style="border: 1px solid #001F3F; padding: 3px; text-align: center; width: 8%;">Fine</th>
             <th style="border: 1px solid #001F3F; padding: 3px; text-align: center; width: 7%;">Ore</th>
             <th style="border: 1px solid #001F3F; padding: 3px; text-align: center; width: 7%;">Extra</th>
-            <th style="border: 1px solid #001F3F; padding: 3px; text-align: left; width: 50%;">Note</th>
+            <th style="border: 1px solid #001F3F; padding: 3px; text-align: left; width: 48%;">Note</th>
             <th style="border: 1px solid #001F3F; padding: 3px; text-align: center; width: 10%;">Buono (€)</th>
           </tr>
         </thead>
@@ -665,10 +670,11 @@ function exportPDF() {
     let extra = (x.ore > 0) ? Math.max(0, x.ore - DAILY_STANDARD).toFixed(2) : '-';
     let buono = (x.s && x.e && x.ore > 0 && !isNoteExempt(x.note)) ? voucherValue.toFixed(2) : '-';
     const bgColor = idx % 2 === 0 ? '#FFFFFF' : '#F9F9F9';
+    const weekday = getWeekdayAbbr(x.d);
     
     htmlContent += `
       <tr style="background-color: ${bgColor};">
-        <td style="border: 1px solid #ddd; padding: 3px; text-align: left;"><strong>${formatDate(x.d)}</strong></td>
+        <td style="border: 1px solid #ddd; padding: 3px; text-align: left;"><strong>${formatDate(x.d)}</strong> <span style="color:#555; font-size:6px;">${weekday}</span></td>
         <td style="border: 1px solid #ddd; padding: 3px; text-align: center;">${inizio}</td>
         <td style="border: 1px solid #ddd; padding: 3px; text-align: center;">${fine}</td>
         <td style="border: 1px solid #ddd; padding: 3px; text-align: center;">${ore}</td>
